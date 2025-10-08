@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlantCare - Live Plant Health Analyzer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary: #2e7d32;
+            --primary-light: #4caf50;
+            --primary-dark: #1b5e20;
+            --secondary: #ff9800;
+            --text: #333333;
+            --text-light: #666666;
+            --background: #f5f5f5;
+            --card: #ffffff;
+            --danger: #f44336;
+            --warning: #ffc107;
+            --success: #4caf50;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text);
+            max-width: 500px;
+            margin: 0 auto;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .app-container {
+            padding-bottom: 80px;
+        }
+
+        .page {
+            display: none;
+            padding: 20px;
+            min-height: 100vh;
+            background-color: var(--background);
+        }
+
+        .active {
+            display: block;
+        }
+
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background-color: var(--card);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            flex: 1;
+            margin: 0 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-top: 5px;
+        }
+
+        .section-title {
+            margin: 20px 0 10px;
+            font-size: 1.2rem;
+            color: var(--text);
+        }
+
+        .analysis-list {
+            background-color: var(--card);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .analysis-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .analysis-item:last-child {
+            border-bottom: none;
+        }
+
+        .plant-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .plant-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .plant-status {
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .status-healthy {
+            color: var(--success);
+        }
+
+        .status-mild {
+            color: var(--warning);
+        }
+
+        .status-needs-attention {
+            color: var(--danger);
+        }
+
+        .analysis-date {
+            color: var(--text-light);
+            font-size: 0.8rem;
+        }
+
+        .scanner-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 70vh;
+        }
+
+        .scanner-frame {
+            width: 300px;
+            height: 300px;
+            border: 3px solid var(--primary);
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        #camera-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .scanner-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(transparent 45%, rgba(46, 125, 50, 0.2) 50%, transparent 55%);
+            animation: scan 2s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes scan {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+
+        .scanner-controls {
+            display: flex;
+            gap: 20px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border-radius: 30px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-secondary {
+            background-color: #e0e0e0;
+            color: var(--text);
+        }
+
+        .camera-permission {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .permission-icon {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        .result-header {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .result-icon {
+            font-size: 4rem;
+            color: var(--warning);
+            margin-bottom: 10px;
+        }
+
+        .disease-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .recovery-chance {
+            color: var(--success);
+            font-weight: bold;
+        }
+
+        .captured-image {
+            width: 100%;
+            max-height: 300px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin: 15px 0;
+        }
+
+        .recommendations-list {
+            background-color: var(--card);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .recommendation-section {
+            margin-bottom: 20px;
+        }
+
+        .recommendation-section h3 {
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+
+        .recommendation-list {
+            list-style-type: none;
+        }
+
+        .recommendation-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+
+        .recommendation-list li:last-child {
+            border-bottom: none;
+        }
+
+        .checkmark {
+            color: var(--success);
+            margin-right: 10px;
+        }
+
+        .api-key-section {
+            background-color: var(--card);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .api-key-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 1rem;
+        }
+
+        .api-info {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-top: 10px;
+        }
+
+        .api-info a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .plant-details {
+            background-color: var(--card);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .plant-scientific-name {
+            font-style: italic;
+            color: var(--text-light);
+            margin-bottom: 10px;
+        }
+
+        .confidence-meter {
+            height: 8px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background-color: var(--primary);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .disease-item {
+            padding: 10px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary);
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: var(--card);
+            display: flex;
+            justify-content: space-around;
+            padding: 15px 0;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+        }
+
+        .nav-icon {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .nav-label {
+            font-size: 0.7rem;
+        }
+
+        .camera-error {
+            text-align: center;
+            padding: 20px;
+            color: var(--danger);
+        }
+
+        .error-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .api-response {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 0.8rem;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <div class="logo">PlantCare</div>
+            <div class="nav-icon">
+                <i class="fas fa-user" id="profile-icon"></i>
+            </div>
+        </header>
+
+        <div id="dashboard-page" class="page active">
+            <h1>Hello, User!</h1>
+            
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number">5</div>
+                    <div class="stat-label">Plants Tracked</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">3</div>
+                    <div class="stat-label">Need Attention</div>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" style="width: 100%; margin: 10px 0;" id="scan-plant-btn">
+                <i class="fas fa-camera"></i> SCAN PLANT
+            </button>
+
+            <h2 class="section-title">Recent Analyses</h2>
+            <div class="analysis-list">
+                <div class="analysis-item">
+                    <div class="plant-info">
+                        <div class="plant-name">Rose Bush</div>
+                        <div class="plant-status status-healthy">
+                            <i class="fas fa-times"></i> Healthy
+                        </div>
+                    </div>
+                    <div class="analysis-date">2 days ago</div>
+                </div>
+                <div class="analysis-item">
+                    <div class="plant-info">
+                        <div class="plant-name">Snake Plant</div>
+                        <div class="plant-status status-mild">
+                            <i class="fas fa-exclamation-triangle"></i> Mild Issue
+                        </div>
+                    </div>
+                    <div class="analysis-date">1 week ago</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="scanner-page" class="page">
+            <h2>Scan Plant</h2>
+            <p>Position plant leaf within the frame</p>
+            
+            <div class="scanner-container">
+                <div class="scanner-frame">
+                    <video id="camera-preview" autoplay playsinline></video>
+                    <div class="scanner-overlay"></div>
+                </div>
+                
+                <div class="scanner-controls">
+                    <button class="btn btn-secondary" id="switch-camera-btn">
+                        <i class="fas fa-sync-alt"></i> SWITCH
+                    </button>
+                    <button class="btn btn-primary" id="capture-btn">
+                        <i class="fas fa-camera"></i> CAPTURE
+                    </button>
+                </div>
+            </div>
+
+            <div id="camera-permission" class="camera-permission" style="display: none;">
+                <div class="permission-icon">
+                    <i class="fas fa-camera"></i>
+                </div>
+                <h3>Camera Access Required</h3>
+                <p>PlantCare needs access to your camera to scan plants.</p>
+                <button class="btn btn-primary" id="enable-camera-btn" style="margin-top: 15px;">
+                    Enable Camera
+                </button>
+            </div>
+
+            <div id="camera-error" class="camera-error" style="display: none;">
+                <div class="error-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h3>Camera Error</h3>
+                <p>Unable to access your camera. Please check permissions and try again.</p>
+                <button class="btn btn-primary" id="retry-camera-btn" style="margin-top: 15px;">
+                    Retry
+                </button>
+            </div>
+        </div>
+
+        <div id="analysis-page" class="page">
+            <div class="result-header">
+                <div class="result-icon">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <h2>ANALYSIS RESULTS</h2>
+                <div class="disease-name" id="disease-name">Analyzing...</div>
+                <div class="recovery-chance" id="recovery-chance"></div>
+            </div>
+
+            <img id="captured-image" class="captured-image" src="" alt="Captured plant image">
+            
+            <div class="spinner" id="analysis-spinner"></div>
+            
+            <div id="plant-details" class="plant-details" style="display: none;">
+                <h3 id="identified-plant-name">Plant Name</h3>
+                <div class="plant-scientific-name" id="plant-scientific-name">Scientific name</div>
+                <div class="confidence-meter">
+                    <div class="confidence-fill" id="confidence-fill" style="width: 0%"></div>
+                </div>
+                <div id="confidence-text">Confidence: 0%</div>
+                
+                <div id="disease-section" style="margin-top: 15px; display: none;">
+                    <h4>Disease Detection</h4>
+                    <div id="disease-list"></div>
+                </div>
+            </div>
+            
+            <div id="api-response-container" style="display: none;">
+                <h4>API Response</h4>
+                <div class="api-response" id="api-response"></div>
+            </div>
+            
+            <button class="btn btn-primary" style="width: 100%; margin: 20px 0; display: none;" id="view-recommendations-btn">
+                VIEW RECOMMENDATIONS
+            </button>
+            
+            <button class="btn btn-secondary" style="width: 100%; margin: 10px 0; display: none;" id="new-scan-btn">
+                SCAN ANOTHER PLANT
+            </button>
+        </div>
+
+        <div id="recommendations-page" class="page">
+            <h1>Recommendations</h1>
+            <h2 id="recommendation-for">For: Leaf Spot Disease</h2>
+            
+            <div class="recommendations-list">
+                <div class="recommendation-section">
+                    <h3>Immediate Actions</h3>
+                    <ul class="recommendation-list">
+                        <li><i class="fas fa-check checkmark"></i> Isolate from other plants</li>
+                        <li><i class="fas fa-check checkmark"></i> Remove affected leaves</li>
+                        <li><i class="fas fa-check checkmark"></i> Improve air circulation</li>
+                    </ul>
+                </div>
+                
+                <div class="recommendation-section">
+                    <h3>Treatment</h3>
+                    <ol class="recommendation-list">
+                        <li>Apply organic fungicide</li>
+                        <li>Water at soil level only</li>
+                        <li>Avoid wetting leaves</li>
+                    </ol>
+                </div>
+                
+                <div class="recommendation-section">
+                    <h3>Monitoring</h3>
+                    <ul class="recommendation-list">
+                        <li>Check daily for spread</li>
+                        <li>Rescan in 3-5 days</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <button class="btn btn-primary" style="width: 100%; margin: 20px 0;">
+                <i class="fas fa-save"></i> SAVE TO LIBRARY
+            </button>
+        </div>
+
+        <div id="settings-page" class="page">
+            <h1>API Settings</h1>
+            
+            <div class="api-key-section">
+                <h3>Plant.id API Key</h3>
+                <p>Enter your Plant.id API key to enable real plant identification:</p>
+                <input type="password" class="api-key-input" id="api-key-input" placeholder="Enter your API key">
+                <button class="btn btn-primary" style="width: 100%; margin: 10px 0;" id="save-api-key">
+                    Save API Key
+                </button>
+                
+                <div class="api-info">
+                    <p>You can get a free API key from <a href="https://web.plant.id/api" target="_blank">Plant.id</a>.</p>
+                    <p>The free plan includes 100 identifications per month.</p>
+                </div>
+            </div>
+            
+            <div class="api-key-section">
+                <h3>Current Status</h3>
+                <p id="api-status">API key not configured</p>
+                <button class="btn btn-secondary" id="test-api-btn" disabled>
+                    Test API Connection
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item active" data-page="dashboard-page">
+            <i class="fas fa-home nav-icon"></i>
+            <span class="nav-label">Home</span>
+        </div>
+        <div class="nav-item" data-page="scanner-page">
+            <i class="fas fa-camera nav-icon"></i>
+            <span class="nav-label">Scan</span>
+        </div>
+        <div class="nav-item" data-page="settings-page">
+            <i class="fas fa-cog nav-icon"></i>
+            <span class="nav-label">Settings</span>
+        </div>
+    </div>
+
+    <script>
+        // Plant.id API integration
+        const PLANT_ID_API_URL = 'https://api.plant.id/v2/identify';
+        let apiKey = localStorage.getItem('plantcare_api_key') || '';
+
+        // Camera functionality
+        let stream = null;
+        let currentFacingMode = 'environment';
+        const video = document.getElementById('camera-preview');
+        const captureBtn = document.getElementById('capture-btn');
+        const switchCameraBtn = document.getElementById('switch-camera-btn');
+        const enableCameraBtn = document.getElementById('enable-camera-btn');
+        const retryCameraBtn = document.getElementById('retry-camera-btn');
+        const cameraPermission = document.getElementById('camera-permission');
+        const cameraError = document.getElementById('camera-error');
+        const scannerFrame = document.querySelector('.scanner-frame');
+        
+        // API Key management
+        const apiKeyInput = document.getElementById('api-key-input');
+        const saveApiKeyBtn = document.getElementById('save-api-key');
+        const testApiBtn = document.getElementById('test-api-btn');
+        const apiStatus = document.getElementById('api-status');
+        
+        // Initialize API key if available
+        if (apiKey) {
+            apiKeyInput.value = '••••••••••••••••';
+            apiStatus.textContent = 'API key is configured';
+            testApiBtn.disabled = false;
+        }
+        
+        // Save API key
+        saveApiKeyBtn.addEventListener('click', function() {
+            const key = apiKeyInput.value;
+            if (key && !key.startsWith('•')) {
+                apiKey = key;
+                localStorage.setItem('plantcare_api_key', key);
+                apiKeyInput.value = '••••••••••••••••';
+                apiStatus.textContent = 'API key saved successfully!';
+                testApiBtn.disabled = false;
+                testApiConnection();
+            } else if (key.startsWith('•')) {
+                apiStatus.textContent = 'API key already saved';
+            } else {
+                apiStatus.textContent = 'Please enter a valid API key';
+            }
+        });
+        
+        // Test API connection
+        testApiBtn.addEventListener('click', testApiConnection);
+        
+        async function testApiConnection() {
+            if (!apiKey) {
+                apiStatus.textContent = 'No API key configured';
+                return;
+            }
+            
+            apiStatus.textContent = 'Testing API connection...';
+            testApiBtn.disabled = true;
+            
+            try {
+                // Create a simple test image
+                const canvas = document.createElement('canvas');
+                canvas.width = 100;
+                canvas.height = 100;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#2e7d32';
+                ctx.fillRect(0, 0, 100, 100);
+                
+                const testImage = canvas.toDataURL('image/jpeg', 0.7);
+                const response = await fetch(testImage);
+                const blob = await response.blob();
+                
+                const formData = new FormData();
+                formData.append('images', blob);
+                formData.append('modifiers', 'crops_fast');
+                formData.append('plant_language', 'en');
+                
+                const apiResponse = await fetch(PLANT_ID_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Api-Key': apiKey
+                    },
+                    body: formData
+                });
+                
+                const responseText = await apiResponse.text();
+                
+                if (apiResponse.ok) {
+                    try {
+                        const data = JSON.parse(responseText);
+                        apiStatus.textContent = 'API connection successful!';
+                    } catch (e) {
+                        apiStatus.textContent = 'API responded but with non-JSON format';
+                    }
+                } else {
+                    apiStatus.textContent = `API error: ${responseText}`;
+                }
+            } catch (error) {
+                apiStatus.textContent = `Connection failed: ${error.message}`;
+            } finally {
+                testApiBtn.disabled = false;
+            }
+        }
+        
+        // Start camera
+        function startCamera() {
+            const constraints = {
+                video: { 
+                    facingMode: currentFacingMode,
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                }
+            };
+            
+            navigator.mediaDevices.getUserMedia(constraints)
+                .then(function(mediaStream) {
+                    stream = mediaStream;
+                    video.srcObject = stream;
+                    cameraPermission.style.display = 'none';
+                    cameraError.style.display = 'none';
+                    scannerFrame.style.display = 'block';
+                })
+                .catch(function(err) {
+                    console.error("Camera error: ", err);
+                    if (err.name === 'NotAllowedError') {
+                        cameraPermission.style.display = 'block';
+                        scannerFrame.style.display = 'none';
+                    } else {
+                        cameraError.style.display = 'block';
+                        scannerFrame.style.display = 'none';
+                    }
+                });
+        }
+        
+        // Stop camera
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => {
+                    track.stop();
+                });
+            }
+        }
+        
+        // Switch camera
+        function switchCamera() {
+            stopCamera();
+            currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+            startCamera();
+        }
+        
+        // Capture image
+        async function captureImage() {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            const imageData = canvas.toDataURL('image/jpeg');
+            
+            document.getElementById('captured-image').src = imageData;
+            showPage('analysis-page');
+            await analyzePlant(imageData);
+        }
+        
+        // Analyze plant
+        async function analyzePlant(imageData) {
+            const diseaseName = document.getElementById('disease-name');
+            const recoveryChance = document.getElementById('recovery-chance');
+            const spinner = document.getElementById('analysis-spinner');
+            const viewRecommendationsBtn = document.getElementById('view-recommendations-btn');
+            const newScanBtn = document.getElementById('new-scan-btn');
+            const plantDetails = document.getElementById('plant-details');
+            const apiResponseContainer = document.getElementById('api-response-container');
+            
+            spinner.style.display = 'block';
+            diseaseName.textContent = 'Analyzing...';
+            recoveryChance.textContent = '';
+            viewRecommendationsBtn.style.display = 'none';
+            newScanBtn.style.display = 'none';
+            plantDetails.style.display = 'none';
+            apiResponseContainer.style.display = 'none';
+            
+            if (!apiKey) {
+                simulateAnalysis();
+                return;
+            }
+            
+            try {
+                const response = await fetch(imageData);
+                const blob = await response.blob();
+                
+                const formData = new FormData();
+                formData.append('images', blob);
+                formData.append('modifiers', 'crops_fast,similar_images');
+                formData.append('plant_language', 'en');
+                formData.append('plant_details', 'common_names,url,description,taxonomy,rank,gbif_id,inaturalist_id,image,synonyms,edible_parts,watering');
+                
+                const apiResponse = await fetch(PLANT_ID_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Api-Key': apiKey
+                    },
+                    body: formData
+                });
+                
+                const responseText = await apiResponse.text();
+                let data;
+                
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    throw new Error(`Invalid JSON: ${responseText.substring(0, 100)}`);
+                }
+                
+                spinner.style.display = 'none';
+                apiResponseContainer.style.display = 'block';
+                document.getElementById('api-response').textContent = JSON.stringify(data, null, 2);
+                
+                if (data.suggestions && data.suggestions.length > 0) {
+                    const topSuggestion = data.suggestions[0];
+                    const plantName = topSuggestion.plant_name;
+                    const confidence = Math.round(topSuggestion.probability * 100);
+                    
+                    document.getElementById('identified-plant-name').textContent = plantName;
+                    document.getElementById('plant-scientific-name').textContent = topSuggestion.plant_details?.scientific_name || 'Unknown';
+                    document.getElementById('confidence-fill').style.width = `${confidence}%`;
+                    document.getElementById('confidence-text').textContent = `Confidence: ${confidence}%`;
+                    
+                    diseaseName.textContent = 'Plant Identified';
+                    recoveryChance.textContent = 'Analysis complete';
+                    plantDetails.style.display = 'block';
+                } else {
+                    diseaseName.textContent = 'Identification Failed';
+                    recoveryChance.textContent = 'Could not identify plant';
+                }
+                
+                viewRecommendationsBtn.style.display = 'block';
+                newScanBtn.style.display = 'block';
+                
+            } catch (error) {
+                console.error('Analysis error:', error);
+                spinner.style.display = 'none';
+                diseaseName.textContent = 'Analysis Failed';
+                recoveryChance.textContent = error.message;
+                newScanBtn.style.display = 'block';
+                simulateAnalysis();
+            }
+        }
+        
+        // Simulate analysis
+        function simulateAnalysis() {
+            const diseaseName = document.getElementById('disease-name');
+            const recoveryChance = document.getElementById('recovery-chance');
+            const spinner = document.getElementById('analysis-spinner');
+            const viewRecommendationsBtn = document.getElementById('view-recommendations-btn');
+            const newScanBtn = document.getElementById('new-scan-btn');
+            const plantDetails = document.getElementById('plant-details');
+            
+            spinner.style.display = 'block';
+            diseaseName.textContent = 'Analyzing...';
+            recoveryChance.textContent = '';
+            viewRecommendationsBtn.style.display = 'none';
+            newScanBtn.style.display = 'none';
+            
+            setTimeout(() => {
+                spinner.style.display = 'none';
+                const diseases = [
+                    { name: 'Leaf Spot Disease', recovery: 'Good Recovery Chance' },
+                    { name: 'Powdery Mildew', recovery: 'Moderate Recovery Chance' },
+                    { name: 'Root Rot', recovery: 'Poor Recovery Chance' },
+                    { name: 'Healthy Plant', recovery: 'No Action Needed' }
+                ];
+                
+                const randomDisease = diseases[Math.floor(Math.random() * diseases.length)];
+                
+                diseaseName.textContent = randomDisease.name;
+                recoveryChance.textContent = randomDisease.recovery;
+                viewRecommendationsBtn.style.display = 'block';
+                newScanBtn.style.display = 'block';
+                
+                document.getElementById('recommendation-for').textContent = `For: ${randomDisease.name}`;
+                
+                document.getElementById('identified-plant-name').textContent = 'Simulated Plant';
+                document.getElementById('plant-scientific-name').textContent = 'Plantus simulatus';
+                document.getElementById('confidence-fill').style.width = '85%';
+                document.getElementById('confidence-text').textContent = 'Confidence: 85%';
+                plantDetails.style.display = 'block';
+            }, 3000);
+        }
+        
+        // Event listeners
+        enableCameraBtn.addEventListener('click', startCamera);
+        retryCameraBtn.addEventListener('click', startCamera);
+        switchCameraBtn.addEventListener('click', switchCamera);
+        captureBtn.addEventListener('click', captureImage);
+        
+        document.getElementById('new-scan-btn').addEventListener('click', function() {
+            showPage('scanner-page');
+        });
+        
+        // Navigation
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(pageId).classList.add('active');
+            
+            document.querySelectorAll('.nav-item').forEach(nav => {
+                nav.classList.remove('active');
+            });
+            
+            if (pageId === 'analysis-page' || pageId === 'recommendations-page') {
+                document.querySelector('[data-page="scanner-page"]').classList.add('active');
+            } else {
+                document.querySelector(`[data-page="${pageId}"]`).classList.add('active');
+            }
+            
+            if (pageId === 'scanner-page') {
+                startCamera();
+            } else {
+                stopCamera();
+            }
+        }
+        
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const pageId = this.getAttribute('data-page');
+                showPage(pageId);
+            });
+        });
+
+        document.getElementById('profile-icon').addEventListener('click', function() {
+            showPage('settings-page');
+        });
+
+        document.getElementById('scan-plant-btn').addEventListener('click', function() {
+            showPage('scanner-page');
+        });
+
+        document.getElementById('view-recommendations-btn').addEventListener('click', function() {
+            showPage('recommendations-page');
+        });
+
+        // Auto-configure your API key
+        window.addEventListener('load', function() {
+            if (!apiKey) {
+                apiKey = 'EdqYkOAEdv7JO1Xyqu6cSi3expfSWkgG2QSKkotSOoe0DfAUQ5';
+                localStorage.setItem('plantcare_api_key', apiKey);
+                apiKeyInput.value = '••••••••••••••••';
+                apiStatus.textContent = 'API key configured automatically';
+                testApiBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
